@@ -6,12 +6,6 @@
 
 This project explores advanced use of **Python generators** to handle large datasets efficiently. Through memory-optimized, lazy-loading techniques and real-world database operations, it demonstrates how Python's `yield` keyword can streamline data processing in modern applications.
 
-> **Start Date:** Jun 30, 2025  
-> **End Date:** Jul 7, 2025  
-> **Project Level:** Novice  
-> **Weight:** 1  
-> **Manual QA Required:** ✅  
-
 ---
 
 ## 🎯 Learning Objectives
@@ -46,6 +40,53 @@ pip install mysql-connector-python
 
 ---
 
+# 🔄 Python Context Managers & Async Operations
+
+## 📚 Project Overview
+
+This project focuses on mastering **Python context managers** and **asynchronous operations** to handle database connections efficiently and perform concurrent operations. Through practical implementations, learners will create custom context managers for database operations and implement asynchronous patterns for improved performance.
+
+> **Start Date:** Jul 8, 2025  
+> **End Date:** Jul 15, 2025  
+> **Project Level:** Intermediate  
+> **Weight:** 1  
+> **Manual QA Required:** ✅  
+
+---
+
+## 🎯 Learning Objectives
+
+By completing this project, you will:
+
+- ✅ Master Python context managers using `__enter__` and `__exit__` methods
+- ✅ Implement custom database connection context managers
+- ✅ Create reusable query execution context managers
+- ✅ Understand asynchronous programming with `asyncio` and `aiosqlite`
+- ✅ Implement concurrent database operations using `asyncio.gather()`
+- ✅ Optimize database performance through asynchronous operations
+- ✅ Handle resource management and cleanup automatically
+
+---
+
+## 🛠️ Requirements
+
+- Python 3.8 or higher
+- SQLite3 database support
+- `aiosqlite` library for async database operations
+- Understanding of:
+  - Python context managers and `with` statements
+  - Asynchronous programming concepts
+  - Database operations and SQL
+  - Git and GitHub for version control
+
+Install required packages:
+
+```bash
+pip install aiosqlite
+```
+
+---
+
 ## 🗂️ Directory Structure
 
 ```
@@ -58,6 +99,11 @@ alx-backend-python/
 │   ├── 3-main.py
 │   ├── 4-stream_ages.py
 │   ├── user_data.csv
+│   └── README.md
+├── python-context-async-perations-0x02/
+│   ├── 0-databaseconnection.py
+│   ├── 1-execute.py
+│   ├── 3-concurrent.py
 │   └── README.md
 └── python-decorators-0x01/
     ├── 0-log_queries.py
@@ -76,9 +122,9 @@ alx-backend-python/
 
 This project focuses on mastering **Python decorators** to enhance database operations in Python applications. Through hands-on tasks, learners create custom decorators to log queries, handle connections, manage transactions, retry failed operations, and cache query results. The tasks simulate real-world challenges, providing an in-depth understanding of Python's capabilities for dynamic and reusable code in database management.
 
-> **Start Date:** Jul 8, 2025  
-> **End Date:** Jul 15, 2025  
-> **Project Level:** Intermediate  
+> **Start Date:** Jul 16, 2025  
+> **End Date:** Jul 23, 2025  
+> **Project Level:** Advanced  
 > **Weight:** 1  
 > **Manual QA Required:** ✅  
 
@@ -94,16 +140,6 @@ By completing this project, professional developers will:
 4. **Optimize database queries** by leveraging caching mechanisms to reduce redundant calls.
 5. **Build resilience into database operations** by implementing retry mechanisms for transient errors.
 6. **Apply best practices in database interaction** for scalable and maintainable Python applications.
-
----
-
-## 🛠️ Requirements
-
-1. Python 3.8 or higher installed.
-2. SQLite3 database setup with a `users` table for testing.
-3. A working knowledge of Python decorators and database operations.
-4. Familiarity with Git and GitHub for project submission.
-5. Strong problem-solving skills and attention to detail.
 
 ---
 
@@ -143,6 +179,43 @@ By completing this project, professional developers will:
 - Function: `compute_average_age()` calculates average  
 - No SQL `AVG()` allowed  
 - No more than 2 loops
+
+---
+
+### **Context Managers & Async Operations Project (python-context-async-perations-0x02/)**
+
+#### 0. Custom Database Connection Context Manager  
+**File:** `0-databaseconnection.py`  
+- **Objective:** Create a custom class-based context manager for database connections
+- **Features:**
+  - Implements `__enter__` and `__exit__` methods
+  - Automatically handles SQLite database connection and cleanup
+  - Provides cursor for query execution
+  - Ensures proper resource management and error handling
+- **Class:** `DatabaseConnection`
+
+#### 1. Query Execution Context Manager  
+**File:** `1-execute.py`  
+- **Objective:** Create a reusable context manager for executing database queries
+- **Features:**
+  - Handles both database connection and query execution
+  - Supports parameterized queries for security
+  - Automatically fetches and returns query results
+  - Combines connection management with query execution
+- **Class:** `ExecuteQuery`
+
+#### 2. Concurrent Asynchronous Database Queries  
+**File:** `3-concurrent.py`  
+- **Objective:** Implement concurrent database operations using asyncio
+- **Features:**
+  - Uses `aiosqlite` for asynchronous SQLite operations
+  - Implements two async functions: `async_fetch_users()` and `async_fetch_older_users()`
+  - Uses `asyncio.gather()` to execute queries concurrently
+  - Demonstrates performance benefits of async operations
+- **Functions:** 
+  - `async_fetch_users()` - fetches all users
+  - `async_fetch_older_users()` - fetches users older than 40
+  - `fetch_concurrently()` - runs both queries concurrently
 
 ---
 
@@ -202,6 +275,27 @@ By completing this project, professional developers will:
 
 ## ✅ Example Output
 
+### Context Managers & Async Operations:
+```bash
+# Database Connection Context Manager
+Connected to database: users.db
+Query Results:
+--------------------------------------------------
+ID: 1, Name: John Doe, Email: john@example.com, Age: 30
+ID: 2, Name: Jane Smith, Email: jane@example.com, Age: 25
+--------------------------------------------------
+Total users: 2
+Disconnected from database: users.db
+
+# Concurrent Async Operations
+Starting concurrent database queries...
+Connected to database: users.db
+Fetched 8 users
+Connected to database: users.db
+Fetched 4 users older than 40
+Concurrent queries completed!
+```
+
 ### Generators Project:
 ```bash
 Average age of users: 47.25
@@ -236,7 +330,19 @@ Use `head`, `tail`, or `islice()` in your test scripts to limit the output when 
 
 ---
 
-## 🔧 Key Decorator Patterns
+## 🔧 Key Patterns & Benefits
+
+### Context Manager Benefits
+- **Automatic Resource Management**: Ensures database connections are properly closed
+- **Error Handling**: Cleanup occurs even when exceptions happen
+- **Code Reusability**: Same context manager can be used across multiple functions
+- **Clean Code**: Eliminates boilerplate connection management
+
+### Asynchronous Programming Benefits
+- **Concurrent Operations**: Multiple database queries can run simultaneously
+- **Improved Performance**: I/O operations don't block the main thread
+- **Better Resource Utilization**: CPU can handle other tasks while waiting for database responses
+- **Scalability**: Applications can handle more concurrent users
 
 ### Decorator Stacking
 Multiple decorators can be combined for powerful functionality:
@@ -251,21 +357,22 @@ def complex_database_operation(conn, query):
     pass
 ```
 
-### Execution Order
-Decorators are applied from bottom to top:
-1. `@cache_query` (innermost - executes first)
-2. `@retry_on_failure` 
-3. `@transactional`
-4. `@with_db_connection` (outermost - executes last)
+### Context Manager with Async
+```python
+async with aiosqlite.connect('users.db') as db:
+    async with db.execute('SELECT * FROM users') as cursor:
+        results = await cursor.fetchall()
+```
 
 ---
 
 ## 📈 Performance Benefits
 
 - **Memory Efficiency**: Generators reduce memory usage for large datasets
+- **Concurrent Processing**: Async operations improve throughput
 - **Query Optimization**: Caching eliminates redundant database calls
 - **Resilience**: Retry mechanisms handle transient failures
-- **Clean Code**: Decorators separate concerns and reduce boilerplate
+- **Clean Code**: Context managers and decorators separate concerns
 - **Maintainability**: Reusable patterns across different functions
 
 ---
@@ -273,19 +380,21 @@ Decorators are applied from bottom to top:
 ## ✅ Final Notes
 
 - Ensure your MySQL server is running for generators project
-- Ensure your SQLite database (`users.db`) exists for decorators project
+- Ensure your SQLite database (`users.db`) exists for context managers and decorators projects
+- Install `aiosqlite` for async database operations: `pip install aiosqlite`
 - Replace your credentials (username/password) in each script as needed
-- Always close your DB connections in a `finally` block
-- Test decorator combinations thoroughly
+- Always use proper resource management with context managers
+- Test async operations thoroughly to ensure proper concurrent execution
 - Consider cache invalidation strategies for production use
 
 ---
 
 ## 🎓 Skills Developed
 
-- **Advanced Python Patterns**: Generators, decorators, context managers
-- **Database Optimization**: Connection pooling, query caching, transaction management
-- **Error Handling**: Retry mechanisms, graceful degradation
-- **Performance Tuning**: Memory efficiency, query optimization
+- **Advanced Python Patterns**: Generators, context managers, decorators, async programming
+- **Database Optimization**: Connection management, query caching, concurrent operations
+- **Error Handling**: Resource cleanup, retry mechanisms, graceful degradation
+- **Performance Tuning**: Memory efficiency, async operations, query optimization
 - **Clean Architecture**: Separation of concerns, reusable components
 - **Production Readiness**: Logging, monitoring, resilience patterns
+- **Concurrent Programming**: Async/await, `asyncio.gather()`, thread safety
