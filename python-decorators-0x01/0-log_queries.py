@@ -1,11 +1,12 @@
 import sqlite3
 import functools
+from datetime import datetime
 
 #### decorator to log SQL queries
 
 def log_queries(func):
     """
-    Decorator that logs SQL queries before executing the decorated function.
+    Decorator that logs SQL queries with timestamps before executing the decorated function.
     
     Args:
         func: The function to be decorated
@@ -26,9 +27,10 @@ def log_queries(func):
         elif args:
             query = args[0]
         
-        # Log the query if found
+        # Log the query with timestamp if found
         if query:
-            print(f"Executing query: {query}")
+            timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            print(f"[{timestamp}] Executing query: {query}")
         
         # Call the original function with all arguments
         return func(*args, **kwargs)
