@@ -17,7 +17,8 @@ class TestAccessNestedMap(unittest.TestCase):
     ])
     def test_access_nested_map(self, nested_map, path, expected):
         """Test that access_nested_map returns expected result."""
-        self.assertEqual(access_nested_map(nested_map, path), expected)
+        result = access_nested_map(nested_map, path)
+        self.assertEqual(result, expected)
 
     @parameterized.expand([
         ({}, ("a",)),
@@ -27,7 +28,8 @@ class TestAccessNestedMap(unittest.TestCase):
         """Test that KeyError is raised with correct message for invalid path."""
         with self.assertRaises(KeyError) as cm:
             access_nested_map(nested_map, path)
-        self.assertEqual(str(cm.exception), "'{}'".format(path[-1]))
+        expected_message = "'{}'".format(path[-1])
+        self.assertEqual(str(cm.exception), expected_message)
 
 
 class TestGetJson(unittest.TestCase):
@@ -66,14 +68,9 @@ class TestMemoize(unittest.TestCase):
 
         with patch.object(TestClass, "a_method", return_value=42) as mock_method:
             test_obj = TestClass()
-
-            # Call property twice
             result1 = test_obj.a_property
             result2 = test_obj.a_property
 
-            # Assert the method returned expected value both times
             self.assertEqual(result1, 42)
             self.assertEqual(result2, 42)
-
-            # Assert a_method was called only once
             mock_method.assert_called_once()
