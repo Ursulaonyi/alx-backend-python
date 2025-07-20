@@ -79,10 +79,10 @@ class TestGithubOrgClient(unittest.TestCase):
 @parameterized_class(
     ("org_payload", "repos_payload", "expected_repos", "apache2_repos"),
     [(
-        TEST_PAYLOAD[0]["org_payload"],
-        TEST_PAYLOAD[0]["repos_payload"],
-        TEST_PAYLOAD[0]["expected_repos"],
-        TEST_PAYLOAD[0]["apache2_repos"],
+        {"repos_url": TEST_PAYLOAD[0][0]["repos_url"], "login": "google"},
+        TEST_PAYLOAD[0][1],
+        TEST_PAYLOAD[0][2],
+        TEST_PAYLOAD[0][3],
     )]
 )
 class TestIntegrationGithubOrgClient(unittest.TestCase):
