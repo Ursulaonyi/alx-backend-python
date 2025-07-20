@@ -2,7 +2,7 @@
 """Unit tests for GithubOrgClient."""
 
 import unittest
-from unittest.mock import patch, PropertyMock
+from unittest.mock import patch, PropertyMock, Mock
 from parameterized import parameterized, parameterized_class
 from client import GithubOrgClient
 from fixtures import TEST_PAYLOAD
@@ -93,13 +93,13 @@ class TestIntegrationGithubOrgClient(unittest.TestCase):
 
         def side_effect(url, *args, **kwargs):
             if url == cls.org_payload["repos_url"]:
-                mock_resp = unittest.mock.Mock()
+                mock_resp = Mock()
                 mock_resp.json.return_value = cls.repos_payload
                 return mock_resp
             elif url == (
                 f"https://api.github.com/orgs/{cls.org_payload['login']}"
             ):
-                mock_resp = unittest.mock.Mock()
+                mock_resp = Mock()
                 mock_resp.json.return_value = cls.org_payload
                 return mock_resp
             else:
