@@ -1,14 +1,99 @@
 #!/usr/bin/env python3
-"""Unit tests for GithubOrgClient methods."""
+"""Unit tests for access_nested_map, get_json, memoize in utils.py
+and GithubOrgClient in client.py"""
 
 import unittest
-from unittest.mock import patch, PropertyMock
+from unittest.mock import patch, Mock, PropertyMock
 from parameterized import parameterized
+from utils import access_nested_map, get_json, memoize
 from client import GithubOrgClient
 
 
+class TestAccessNestedMap(unittest.TestCase):
+    """Tests for the access_nested_map function."""
+
+    @parameterized.expand([
+        ({"a": 1}, ("a",), 1),
+        ({"a": {"b": 2}}, ("a",), {"b": 2}),
+        ({"a": {"b": 2}}, ("a", "b"), 2),
+    ])
+    def test_access_nested_map(self, nested_map, path, expected):
+        """Test that access_nested_map returns expected result."""
+        result = access_nested_map(
+            nested_map,
+            path
+        )
+        self.assertEqual(
+            result,
+            expected
+        )
+
+    @parameterized.expand([
+        ({}, ("a",)),
+        ({"a": 1}, ("a", "b")),
+    ])
+    def test_access_nested_map_exception(self, nested_map, path):
+        """Test that KeyError is  with correct message for invalid path."""
+        with self.assertRaises(KeyError) as cm:
+            access_nested_map(nested_map, path)
+        self.assertEqual(
+            str(cm.exception),
+            "'{}'".format(path[-1])
+        )
+
+
+class TestGetJson(unittest.TestCase):
+    """Tests for the get_json function."""
+
+    @parameterized.expand([
+        ("http://example.com", {"payload": True}),
+        ("http://holberton.io", {"payload": False}),
+    ])
+    @patch("utils.requests.get")
+    def test_get_json(self, test_url, test_payload, mock_get):
+        """
+        Test get_json returns expected payload
+        and calls requests.get correctly.
+        """
+        mock_response = Mock()
+        mock_response.json.return_value = test_payload
+        mock_get.return_value = mock_response
+
+        result = get_json(test_url)
+
+        mock_get.assert_called_once_with(test_url)
+        self.assertEqual(result, test_payload)
+
+
+class TestMemoize(unittest.TestCase):
+    """Tests for the memoize decorator."""
+
+    def test_memoize(self):
+        """Test that memoize caches method result and
+        calls underlying method once."""
+
+        class TestClass:
+            def a_method(self):
+                return 42
+
+            @memoize
+            def a_property(self):
+                return self.a_method()
+
+        with patch.object(
+            TestClass, 'a_method', return_value=42
+        ) as mock_method:
+            obj = TestClass()
+            result1 = obj.a_property
+            result2 = obj.a_property
+
+            mock_method.assert_called_once()
+            self.assertEqual(result1, 42)
+            self.assertEqual(result2, 42)
+
+
 class TestGithubOrgClient(unittest.TestCase):
-    """Tests for the GithubOrgClient class."""
+    """Tests for GithubOrgClient methods."""
 
     @parameterized.expand([
         ("google",),
@@ -31,7 +116,9 @@ class TestGithubOrgClient(unittest.TestCase):
         """Test that _public_repos_url returns expected repos_url
         from the mocked org property."""
         client = GithubOrgClient("test_org")
-        mocked_org_payload = {"repos_url": "https://api.github.com/orgs/test_org/repos"}
+        mocked_org_payload = {
+            "repos_url": "https://api.github.com/orgs/test_org/repos"
+        }
 
         with patch.object(
             GithubOrgClient, "org", new_callable=PropertyMock
@@ -58,7 +145,9 @@ class TestGithubOrgClient(unittest.TestCase):
         with patch.object(
             GithubOrgClient, "_public_repos_url", new_callable=PropertyMock
         ) as mock_public_repos_url:
-            mock_public_repos_url.return_value = "https://api.github.com/orgs/test_org/repos"
+            mock_public_repos_url.return_value = (
+                "https://api.github.com/orgs/test_org/repos"
+            )
 
             repos = client.public_repos(license="mit")
 
