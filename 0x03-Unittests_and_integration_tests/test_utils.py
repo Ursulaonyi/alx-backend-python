@@ -34,7 +34,10 @@ class TestAccessNestedMap(unittest.TestCase):
         """Test that KeyError is with correct message for invalid path."""
         with self.assertRaises(KeyError) as cm:
             access_nested_map(nested_map, path)
-        self.assertEqual(str(cm.exception), "'{}'".format(path[-1]))
+        self.assertEqual(
+            str(cm.exception),
+            "'{}'".format(path[-1])
+        )
 
 
 class TestGetJson(unittest.TestCase):
@@ -79,9 +82,13 @@ class TestMemoize(unittest.TestCase):
             TestClass, 'a_method', return_value=42
         ) as mock_method:
             obj = TestClass()
-            result1 = obj.a_property()
-            result2 = obj.a_property()
+            result1 = obj.a_property
+            result2 = obj.a_property
 
             mock_method.assert_called_once()
             self.assertEqual(result1, 42)
             self.assertEqual(result2, 42)
+
+
+if __name__ == "__main__":
+    unittest.main()
