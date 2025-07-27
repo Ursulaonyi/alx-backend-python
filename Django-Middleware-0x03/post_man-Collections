@@ -1,0 +1,196 @@
+info	
+name	"Messaging App API Tests"
+description	"Tests JWT login, conversations, and messages."
+schema	"https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+item	
+0	
+name	"Auth - Login (JWT)"
+request	
+method	"POST"
+header	
+0	
+key	"Content-Type"
+value	"application/json"
+url	
+raw	"{{base_url}}/token/"
+host	
+0	"{{base_url}}"
+path	
+0	"token"
+body	
+mode	"raw"
+raw	'{\n    "email": "{{email}}",\n    "password": "{{password}}"\n}'
+1	
+name	"Users - Me"
+request	
+method	"GET"
+header	
+0	
+key	"Authorization"
+value	"Bearer {{jwt_token}}"
+url	
+raw	"{{base_url}}/users/me/"
+host	
+0	"{{base_url}}"
+path	
+0	"users"
+1	"me"
+2	
+name	"Conversations - Create"
+request	
+method	"POST"
+header	
+0	
+key	"Content-Type"
+value	"application/json"
+1	
+key	"Authorization"
+value	"Bearer {{jwt_token}}"
+url	
+raw	"{{base_url}}/conversations/"
+host	
+0	"{{base_url}}"
+path	
+0	"conversations"
+body	
+mode	"raw"
+raw	'{\n    "participant_ids": [\n        "{{other_user_id}}"\n    ]\n}'
+3	
+name	"Messages - Send Message"
+request	
+method	"POST"
+header	
+0	
+key	"Content-Type"
+value	"application/json"
+1	
+key	"Authorization"
+value	"Bearer {{jwt_token}}"
+url	
+raw	"{{base_url}}/messages/"
+host	
+0	"{{base_url}}"
+path	
+0	"messages"
+body	
+mode	"raw"
+raw	'{\n    "conversation": "{{conversation_id}}",\n    "message_body": "Hello, this is a test message."\n}'
+4	
+name	"Conversations - List"
+request	
+method	"GET"
+header	
+0	
+key	"Authorization"
+value	"Bearer {{jwt_token}}"
+url	
+raw	"{{base_url}}/conversations/"
+host	
+0	"{{base_url}}"
+path	
+0	"conversations"
+5	
+name	"Conversations - Unauthorized Access"
+request	
+method	"GET"
+header	[]
+url	
+raw	"{{base_url}}/conversations/"
+host	
+0	"{{base_url}}"
+path	
+0	"conversations"
+6	
+name	"Auth - Login (Get JWT)"
+request	
+method	"POST"
+header	
+0	
+key	"Content-Type"
+value	"application/json"
+body	
+mode	"raw"
+raw	'{\n    "email": "alice@example.com",\n    "password": "TestPassword123!"\n}'
+url	
+raw	"{{base_url}}/token/"
+host	
+0	"{{base_url}}"
+path	
+0	"token"
+1	""
+7	
+name	"Conversations - Create New"
+request	
+method	"POST"
+header	
+0	
+key	"Authorization"
+value	"Bearer {{jwt_token}}"
+1	
+key	"Content-Type"
+value	"application/json"
+body	
+mode	"raw"
+raw	'{\n    "participants": [\n        "uuid-of-alice",\n        "uuid-of-bob"\n    ]\n}'
+url	
+raw	"{{base_url}}/conversations/"
+host	
+0	"{{base_url}}"
+path	
+0	"conversations"
+1	""
+8	
+name	"Conversations - List All"
+request	
+method	"GET"
+header	
+0	
+key	"Authorization"
+value	"Bearer {{jwt_token}}"
+url	
+raw	"{{base_url}}/conversations/"
+host	
+0	"{{base_url}}"
+path	
+0	"conversations"
+1	""
+9	
+name	"Messages - Send Message"
+request	
+method	"POST"
+header	
+0	
+key	"Authorization"
+value	"Bearer {{jwt_token}}"
+1	
+key	"Content-Type"
+value	"application/json"
+body	
+mode	"raw"
+raw	'{\n    "conversation": "uuid-of-convo",\n    "content": "Hello from Postman!"\n}'
+url	
+raw	"{{base_url}}/messages/"
+host	
+0	"{{base_url}}"
+path	
+0	"messages"
+1	""
+10	
+name	"Messages - List for Conversation"
+request	
+method	"GET"
+header	
+0	
+key	"Authorization"
+value	"Bearer {{jwt_token}}"
+url	
+raw	"{{base_url}}/messages/?conversation=uuid-of-convo"
+host	
+0	"{{base_url}}"
+path	
+0	"messages"
+1	""
+query	
+0	
+key	"conversation"
+value	"uuid-of-convo"
