@@ -350,3 +350,4 @@ class MessageViewSet(viewsets.ModelViewSet):
             context={'request': request}
         )
         return Response(serializer.data)
+        
