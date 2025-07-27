@@ -67,3 +67,23 @@ class OffensiveLanguageMiddleware:
         if x_forwarded_for:
             return x_forwarded_for.split(",")[0]
         return request.META.get("REMOTE_ADDR")
+
+
+class RolePermissionMiddleware:
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        protected_paths = ['/messages', '/admin-only-action']
+        if any(path in request.path for path in protected_paths):
+            user = request.user
+            if not user.is_authenticated:
+                return JsonResponse({'detail': 'Authentication required'}, status=401)
+
+            role = getattr(user, 'role', None)
+            if role not in ['admin', 'moderator']:
+                return JsonResponse({
+                    'detail': '❌ Forbidden: You do not have permission to perform this action.'
+                }, status=403)
+
+        return self.get_response(request)
