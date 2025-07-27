@@ -1,26 +1,25 @@
-from datetime import datetime
+from datetime import datetime, timedelta
+from django.http import JsonResponse
+from collections import defaultdict
 import logging
-from django.http import HttpResponseForbidden
 
-# Configure logging to file
 logger = logging.getLogger(__name__)
-file_handler = logging.FileHandler('requests.log')
-formatter = logging.Formatter('%(message)s')
-file_handler.setFormatter(formatter)
-logger.setLevel(logging.INFO)
-logger.addHandler(file_handler)
 
 class RequestLoggingMiddleware:
     def __init__(self, get_response):
         self.get_response = get_response
 
     def __call__(self, request):
-        user = request.user if request.user.is_authenticated else "Anonymous"
-        log_entry = f"{datetime.now()} - User: {user} - Path: {request.path}"
-        logger.info(log_entry)
+        logger.info(
+            f"[{datetime.now()}] {request.method} request to {request.path} from IP: {self.get_client_ip(request)}"
+        )
+        return self.get_response(request)
 
-        response = self.get_response(request)
-        return response
+    def get_client_ip(self, request):
+        x_forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
+        if x_forwarded_for:
+            return x_forwarded_for.split(",")[0]
+        return request.META.get("REMOTE_ADDR")
 
 
 class RestrictAccessByTimeMiddleware:
@@ -28,11 +27,43 @@ class RestrictAccessByTimeMiddleware:
         self.get_response = get_response
 
     def __call__(self, request):
-        now = datetime.now().time()
-        start_time = datetime.strptime("18:00", "%H:%M").time()  # 6 PM
-        end_time = datetime.strptime("21:00", "%H:%M").time()    # 9 PM
+        current_hour = datetime.now().hour
+        if not (8 <= current_hour < 17):
+            return JsonResponse({
+                "error": "⏰ Access is restricted. Only allowed between 8AM and 5PM."
+            }, status=403)
+        return self.get_response(request)
 
-        if not (start_time <= now <= end_time):
-            return HttpResponseForbidden("❌ Access denied: You can only access the chat between 6:00 PM and 9:00 PM.")
+
+class OffensiveLanguageMiddleware:
+    def __init__(self, get_response):
+        self.get_response = get_response
+        self.ip_message_log = defaultdict(list)
+        self.limit = 5  # messages
+        self.window_seconds = 60  # 1 minute
+
+    def __call__(self, request):
+        if request.method == "POST" and "/messages" in request.path:
+            ip = self.get_client_ip(request)
+            now = datetime.now()
+
+            # Remove timestamps older than the rate limit window
+            self.ip_message_log[ip] = [
+                ts for ts in self.ip_message_log[ip]
+                if now - ts < timedelta(seconds=self.window_seconds)
+            ]
+
+            if len(self.ip_message_log[ip]) >= self.limit:
+                return JsonResponse({
+                    "detail": "❌ Message rate limit exceeded. Only 5 messages per minute allowed."
+                }, status=429)
+
+            self.ip_message_log[ip].append(now)
 
         return self.get_response(request)
+
+    def get_client_ip(self, request):
+        x_forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
+        if x_forwarded_for:
+            return x_forwarded_for.split(",")[0]
+        return request.META.get("REMOTE_ADDR")
