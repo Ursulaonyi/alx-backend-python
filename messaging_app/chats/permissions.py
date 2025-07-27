@@ -4,6 +4,39 @@ Custom permissions for the messaging app
 from rest_framework import permissions
 
 
+class IsParticipantOfConversation(permissions.BasePermission):
+    """
+    Custom permission to allow only authenticated users to access the API
+    and only participants in a conversation to send, view, update and delete messages
+    """
+    
+    def has_permission(self, request, view):
+        """
+        Check if user is authenticated
+        """
+        return request.user and request.user.is_authenticated
+    
+    def has_object_permission(self, request, view, obj):
+        """
+        Check if user is a participant of the conversation
+        """
+        # For message objects, check if user is participant of the conversation
+        if hasattr(obj, 'conversation') and hasattr(obj.conversation, 'participants'):
+            return obj.conversation.participants.filter(user_id=request.user.user_id).exists()
+        
+        # For conversation objects, check if user is a participant
+        if hasattr(obj, 'participants'):
+            return obj.participants.filter(user_id=request.user.user_id).exists()
+        
+        # For user objects, check if it's the same user (using user_id if available)
+        if hasattr(obj, 'user_id'):  # Custom User model with user_id field
+            return obj.user_id == request.user.user_id
+        elif hasattr(obj, 'username'):  # Standard User model
+            return obj == request.user
+        
+        return False
+
+
 class IsOwnerOrReadOnly(permissions.BasePermission):
     """
     Custom permission to only allow owners of an object to edit it.
@@ -36,7 +69,7 @@ class IsMessageOwnerOrConversationParticipant(permissions.BasePermission):
     
     def has_object_permission(self, request, view, obj):
         # Message sender can always access their own messages
-        if obj.sender == request.user:
+        if hasattr(obj, 'sender') and obj.sender == request.user:
             return True
         
         # Conversation participants can read messages
@@ -102,7 +135,7 @@ class CanCreateMessage(permissions.BasePermission):
                 try:
                     from .models import Conversation
                     conversation = Conversation.objects.get(id=conversation_id)
-                    return request.user in conversation.participants.all()
+                    return conversation.participants.filter(user_id=request.user.user_id).exists()
                 except Conversation.DoesNotExist:
                     return False
         

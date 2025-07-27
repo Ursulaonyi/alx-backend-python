@@ -19,6 +19,7 @@ from .serializers import (
     MessageCreateSerializer,
     MessageListSerializer,
 )
+from .permissions import IsParticipantOfConversation
 
 User = get_user_model()
 
@@ -29,7 +30,7 @@ class UserViewSet(viewsets.ModelViewSet):
     Provides CRUD operations for user management.
     """
     queryset = User.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsParticipantOfConversation]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     search_fields = ['first_name', 'last_name', 'email']
     ordering_fields = ['first_name', 'last_name', 'date_joined']
@@ -46,6 +47,12 @@ class UserViewSet(viewsets.ModelViewSet):
         if self.action == 'create':
             return []  # No authentication required for user registration
         return [permission() for permission in self.permission_classes]
+    
+    def get_queryset(self):
+        """Users can only see their own profile unless it's a search."""
+        if self.action in ['search']:
+            return User.objects.all()
+        return User.objects.filter(user_id=self.request.user.user_id)
     
     @action(detail=False, methods=['get'])
     def me(self, request):
@@ -82,7 +89,7 @@ class ConversationViewSet(viewsets.ModelViewSet):
     ViewSet for managing conversations.
     Provides endpoints for listing, creating, and managing conversations.
     """
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsParticipantOfConversation]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['is_group_chat', 'created_at']
     search_fields = ['title']
@@ -233,7 +240,7 @@ class MessageViewSet(viewsets.ModelViewSet):
     ViewSet for managing messages.
     Provides endpoints for listing, creating, and managing messages.
     """
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsParticipantOfConversation]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['conversation', 'sender', 'sent_at']
     search_fields = ['message_body']
@@ -350,4 +357,3 @@ class MessageViewSet(viewsets.ModelViewSet):
             context={'request': request}
         )
         return Response(serializer.data)
-        

@@ -88,6 +88,16 @@ class MessageSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ['message_id', 'sent_at']
     
+    def validate_conversation(self, value):
+        """Validate that the user is a participant in the conversation."""
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            if not value.participants.filter(user_id=request.user.user_id).exists():
+                raise serializers.ValidationError(
+                    "You must be a participant in this conversation to send messages."
+                )
+        return value
+    
     def create(self, validated_data):
         """Create message with sender from request context."""
         # Get sender from request if not provided
@@ -109,6 +119,22 @@ class MessageCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Message
         fields = ['conversation', 'message_body']
+    
+    def validate_conversation(self, value):
+        """Validate that the user is a participant in the conversation."""
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            if not value.participants.filter(user_id=request.user.user_id).exists():
+                raise serializers.ValidationError(
+                    "You are not a participant in this conversation."
+                )
+        return value
+    
+    def validate_message_body(self, value):
+        """Validate message body is not empty."""
+        if not value or not value.strip():
+            raise serializers.ValidationError("Message body cannot be empty.")
+        return value.strip()
     
     def create(self, validated_data):
         """Create message with sender from request context."""
@@ -223,6 +249,9 @@ class ConversationCreateSerializer(serializers.ModelSerializer):
         if request and request.user.is_authenticated:
             participant_ids.append(request.user.user_id)
         
+        # Remove duplicates while preserving order
+        participant_ids = list(dict.fromkeys(participant_ids))
+        
         # Add participants
         participants = User.objects.filter(user_id__in=participant_ids)
         conversation.participants.set(participants)
@@ -241,6 +270,14 @@ class ConversationCreateSerializer(serializers.ModelSerializer):
         if existing_users != len(value):
             raise serializers.ValidationError("One or more participant IDs are invalid.")
         
+        # Prevent creating conversation with only self
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            if len(value) == 1 and str(value[0]) == str(request.user.user_id):
+                raise serializers.ValidationError(
+                    "You cannot create a conversation with only yourself."
+                )
+        
         return value
 
 
@@ -253,6 +290,7 @@ class ConversationListSerializer(serializers.ModelSerializer):
     participants = serializers.SerializerMethodField()
     last_message_preview = serializers.SerializerMethodField()
     unread_count = serializers.SerializerMethodField()
+    is_participant = serializers.SerializerMethodField()
     
     class Meta:
         model = Conversation
@@ -261,6 +299,7 @@ class ConversationListSerializer(serializers.ModelSerializer):
             'participants',
             'last_message_preview',
             'unread_count',
+            'is_participant',
             'created_at'
         ]
     
@@ -283,6 +322,13 @@ class ConversationListSerializer(serializers.ModelSerializer):
         """Return unread message count (placeholder for future implementation)."""
         # This would require a read status tracking system
         return 0
+    
+    def get_is_participant(self, obj):
+        """Check if current user is a participant in this conversation."""
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            return obj.participants.filter(user_id=request.user.user_id).exists()
+        return False
 
 
 class MessageListSerializer(serializers.ModelSerializer):
@@ -291,6 +337,8 @@ class MessageListSerializer(serializers.ModelSerializer):
     """
     sender_name = serializers.SerializerMethodField()
     is_own_message = serializers.SerializerMethodField()
+    can_edit = serializers.SerializerMethodField()
+    can_delete = serializers.SerializerMethodField()
     
     class Meta:
         model = Message
@@ -298,6 +346,8 @@ class MessageListSerializer(serializers.ModelSerializer):
             'message_id',
             'sender_name',
             'is_own_message',
+            'can_edit',
+            'can_delete',
             'message_body',
             'sent_at'
         ]
@@ -308,6 +358,20 @@ class MessageListSerializer(serializers.ModelSerializer):
     
     def get_is_own_message(self, obj):
         """Check if message belongs to current user."""
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            return obj.sender.user_id == request.user.user_id
+        return False
+    
+    def get_can_edit(self, obj):
+        """Check if current user can edit this message."""
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            return obj.sender.user_id == request.user.user_id
+        return False
+    
+    def get_can_delete(self, obj):
+        """Check if current user can delete this message."""
         request = self.context.get('request')
         if request and request.user.is_authenticated:
             return obj.sender.user_id == request.user.user_id
