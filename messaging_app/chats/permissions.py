@@ -19,7 +19,26 @@ class IsParticipantOfConversation(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
         """
         Check if user is a participant of the conversation
+        Allow only participants to send, view, update and delete messages
         """
+        # Handle different HTTP methods
+        if request.method in ['GET', 'HEAD', 'OPTIONS']:
+            # View permissions
+            pass
+        elif request.method in ['POST']:
+            # Send/Create permissions
+            pass
+        elif request.method in ['PUT', 'PATCH']:
+            # Update permissions - only message sender can update
+            if hasattr(obj, 'sender') and hasattr(obj.sender, 'user_id'):
+                if obj.sender.user_id != request.user.user_id:
+                    return False
+        elif request.method in ['DELETE']:
+            # Delete permissions - only message sender can delete
+            if hasattr(obj, 'sender') and hasattr(obj.sender, 'user_id'):
+                if obj.sender.user_id != request.user.user_id:
+                    return False
+        
         # For message objects, check if user is participant of the conversation
         if hasattr(obj, 'conversation') and hasattr(obj.conversation, 'participants'):
             return obj.conversation.participants.filter(user_id=request.user.user_id).exists()

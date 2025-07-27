@@ -204,6 +204,15 @@ class ConversationViewSet(viewsets.ModelViewSet):
     def messages(self, request, pk=None):
         """Get paginated messages for a specific conversation."""
         conversation = self.get_object()
+        conversation_id = conversation.conversation_id
+        
+        # Verify user is participant
+        if not conversation.participants.filter(user_id=request.user.user_id).exists():
+            return Response(
+                {'error': f'You are not a participant in conversation {conversation_id}'}, 
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
         messages = conversation.messages.select_related('sender').all()
         
         # Apply pagination
@@ -272,9 +281,10 @@ class MessageViewSet(viewsets.ModelViewSet):
         
         # Verify user is participant in the conversation
         conversation = serializer.validated_data['conversation']
+        conversation_id = conversation.conversation_id
         if not conversation.participants.filter(user_id=request.user.user_id).exists():
             return Response(
-                {'error': 'You are not a participant in this conversation'}, 
+                {'error': f'You are not a participant in conversation {conversation_id}'}, 
                 status=status.HTTP_403_FORBIDDEN
             )
         
@@ -293,11 +303,12 @@ class MessageViewSet(viewsets.ModelViewSet):
     def update(self, request, *args, **kwargs):
         """Update a message (only by the sender)."""
         message = self.get_object()
+        conversation_id = message.conversation.conversation_id
         
         # Only allow sender to update their own messages
         if message.sender.user_id != request.user.user_id:
             return Response(
-                {'error': 'You can only edit your own messages'}, 
+                {'error': f'You can only edit your own messages in conversation {conversation_id}'}, 
                 status=status.HTTP_403_FORBIDDEN
             )
         
@@ -306,11 +317,12 @@ class MessageViewSet(viewsets.ModelViewSet):
     def destroy(self, request, *args, **kwargs):
         """Delete a message (only by the sender)."""
         message = self.get_object()
+        conversation_id = message.conversation.conversation_id
         
         # Only allow sender to delete their own messages
         if message.sender.user_id != request.user.user_id:
             return Response(
-                {'error': 'You can only delete your own messages'}, 
+                {'error': f'You can only delete your own messages in conversation {conversation_id}'}, 
                 status=status.HTTP_403_FORBIDDEN
             )
         
@@ -352,6 +364,15 @@ class MessageViewSet(viewsets.ModelViewSet):
     def conversation(self, request, pk=None):
         """Get the conversation that contains this message."""
         message = self.get_object()
+        conversation_id = message.conversation.conversation_id
+        
+        # Verify user is participant in the conversation
+        if not message.conversation.participants.filter(user_id=request.user.user_id).exists():
+            return Response(
+                {'error': f'You are not a participant in conversation {conversation_id}'}, 
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
         serializer = ConversationDetailSerializer(
             message.conversation, 
             context={'request': request}
