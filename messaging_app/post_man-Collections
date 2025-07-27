@@ -1,196 +1,318 @@
-info	
-name	"Messaging App API Tests"
-description	"Tests JWT login, conversations, and messages."
-schema	"https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
-item	
-0	
-name	"Auth - Login (JWT)"
-request	
-method	"POST"
-header	
-0	
-key	"Content-Type"
-value	"application/json"
-url	
-raw	"{{base_url}}/token/"
-host	
-0	"{{base_url}}"
-path	
-0	"token"
-body	
-mode	"raw"
-raw	'{\n    "email": "{{email}}",\n    "password": "{{password}}"\n}'
-1	
-name	"Users - Me"
-request	
-method	"GET"
-header	
-0	
-key	"Authorization"
-value	"Bearer {{jwt_token}}"
-url	
-raw	"{{base_url}}/users/me/"
-host	
-0	"{{base_url}}"
-path	
-0	"users"
-1	"me"
-2	
-name	"Conversations - Create"
-request	
-method	"POST"
-header	
-0	
-key	"Content-Type"
-value	"application/json"
-1	
-key	"Authorization"
-value	"Bearer {{jwt_token}}"
-url	
-raw	"{{base_url}}/conversations/"
-host	
-0	"{{base_url}}"
-path	
-0	"conversations"
-body	
-mode	"raw"
-raw	'{\n    "participant_ids": [\n        "{{other_user_id}}"\n    ]\n}'
-3	
-name	"Messages - Send Message"
-request	
-method	"POST"
-header	
-0	
-key	"Content-Type"
-value	"application/json"
-1	
-key	"Authorization"
-value	"Bearer {{jwt_token}}"
-url	
-raw	"{{base_url}}/messages/"
-host	
-0	"{{base_url}}"
-path	
-0	"messages"
-body	
-mode	"raw"
-raw	'{\n    "conversation": "{{conversation_id}}",\n    "message_body": "Hello, this is a test message."\n}'
-4	
-name	"Conversations - List"
-request	
-method	"GET"
-header	
-0	
-key	"Authorization"
-value	"Bearer {{jwt_token}}"
-url	
-raw	"{{base_url}}/conversations/"
-host	
-0	"{{base_url}}"
-path	
-0	"conversations"
-5	
-name	"Conversations - Unauthorized Access"
-request	
-method	"GET"
-header	[]
-url	
-raw	"{{base_url}}/conversations/"
-host	
-0	"{{base_url}}"
-path	
-0	"conversations"
-6	
-name	"Auth - Login (Get JWT)"
-request	
-method	"POST"
-header	
-0	
-key	"Content-Type"
-value	"application/json"
-body	
-mode	"raw"
-raw	'{\n    "email": "alice@example.com",\n    "password": "TestPassword123!"\n}'
-url	
-raw	"{{base_url}}/token/"
-host	
-0	"{{base_url}}"
-path	
-0	"token"
-1	""
-7	
-name	"Conversations - Create New"
-request	
-method	"POST"
-header	
-0	
-key	"Authorization"
-value	"Bearer {{jwt_token}}"
-1	
-key	"Content-Type"
-value	"application/json"
-body	
-mode	"raw"
-raw	'{\n    "participants": [\n        "uuid-of-alice",\n        "uuid-of-bob"\n    ]\n}'
-url	
-raw	"{{base_url}}/conversations/"
-host	
-0	"{{base_url}}"
-path	
-0	"conversations"
-1	""
-8	
-name	"Conversations - List All"
-request	
-method	"GET"
-header	
-0	
-key	"Authorization"
-value	"Bearer {{jwt_token}}"
-url	
-raw	"{{base_url}}/conversations/"
-host	
-0	"{{base_url}}"
-path	
-0	"conversations"
-1	""
-9	
-name	"Messages - Send Message"
-request	
-method	"POST"
-header	
-0	
-key	"Authorization"
-value	"Bearer {{jwt_token}}"
-1	
-key	"Content-Type"
-value	"application/json"
-body	
-mode	"raw"
-raw	'{\n    "conversation": "uuid-of-convo",\n    "content": "Hello from Postman!"\n}'
-url	
-raw	"{{base_url}}/messages/"
-host	
-0	"{{base_url}}"
-path	
-0	"messages"
-1	""
-10	
-name	"Messages - List for Conversation"
-request	
-method	"GET"
-header	
-0	
-key	"Authorization"
-value	"Bearer {{jwt_token}}"
-url	
-raw	"{{base_url}}/messages/?conversation=uuid-of-convo"
-host	
-0	"{{base_url}}"
-path	
-0	"messages"
-1	""
-query	
-0	
-key	"conversation"
-value	"uuid-of-convo"
+{
+	"info": {
+		"_postman_id": "3232bdf0-e362-4742-8991-ff5ef9eb88cc",
+		"name": "post_man-Collections",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "40103655"
+	},
+	"item": [
+		{
+			"name": "Creating conversation",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Cache-Control",
+						"value": "no-cache",
+						"name": "cache-control",
+						"type": "text"
+					},
+					{
+						"key": "Postman-Token",
+						"value": "<calculated when request is sent>",
+						"name": "postman-token",
+						"type": "text"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"name": "content-type",
+						"type": "text"
+					},
+					{
+						"key": "Content-Length",
+						"value": "<calculated when request is sent>",
+						"name": "content-length",
+						"type": "text"
+					},
+					{
+						"key": "Host",
+						"value": "<calculated when request is sent>",
+						"name": "host",
+						"type": "text"
+					},
+					{
+						"key": "User-Agent",
+						"value": "PostmanRuntime/7.39.1",
+						"name": "user-agent",
+						"type": "text"
+					},
+					{
+						"key": "Accept",
+						"value": "*/*",
+						"name": "accept",
+						"type": "text"
+					},
+					{
+						"key": "Accept-Encoding",
+						"value": "gzip, deflate, br",
+						"name": "accept-encoding",
+						"type": "text"
+					},
+					{
+						"key": "Connection",
+						"value": "keep-alive",
+						"name": "connection",
+						"type": "text"
+					},
+					{
+						"key": "Authorization",
+						"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzUzNDQ0OTU4LCJpYXQiOjE3NTM0NDQ2NTgsImp0aSI6IjM2ZjMyOTIxMTQ3MjQ1MDk5ZWE0ZGQwNjY4ZmUwZjNjIiwidXNlcl9pZCI6ImU0N2RiM2E5LWYyYWEtNDFjYS1hNGY5LTdiZDUxNzVkMWI4MSJ9._8OENimB01bdYPzYJL7RsCmnx8daPVvQ3NUS5ezeB9U",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"participants_id\": [\r\n        \"e47db3a9-f2aa-41ca-a4f9-7bd5175d1b81\",\r\n        \"228b94e8-26ba-4e2f-9d0d-6f410ca67560\"\r\n    ]\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://127.0.0.1:8000/api/conversations/",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "8000",
+					"path": [
+						"api",
+						"conversations",
+						""
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Sending messages",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Cache-Control",
+						"value": "no-cache",
+						"name": "cache-control",
+						"type": "text"
+					},
+					{
+						"key": "Postman-Token",
+						"value": "<calculated when request is sent>",
+						"name": "postman-token",
+						"type": "text"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"name": "content-type",
+						"type": "text"
+					},
+					{
+						"key": "Content-Length",
+						"value": "<calculated when request is sent>",
+						"name": "content-length",
+						"type": "text"
+					},
+					{
+						"key": "Host",
+						"value": "<calculated when request is sent>",
+						"name": "host",
+						"type": "text"
+					},
+					{
+						"key": "User-Agent",
+						"value": "PostmanRuntime/7.39.1",
+						"name": "user-agent",
+						"type": "text"
+					},
+					{
+						"key": "Accept",
+						"value": "*/*",
+						"name": "accept",
+						"type": "text"
+					},
+					{
+						"key": "Accept-Encoding",
+						"value": "gzip, deflate, br",
+						"name": "accept-encoding",
+						"type": "text"
+					},
+					{
+						"key": "Connection",
+						"value": "keep-alive",
+						"name": "connection",
+						"type": "text"
+					},
+					{
+						"key": "Authorization",
+						"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzUzNDQ1MjI5LCJpYXQiOjE3NTM0NDQ5MjksImp0aSI6IjhmYjI3NTg2YmJhMTRkNjE4Y2YyNWJiYTBmY2IyMTYxIiwidXNlcl9pZCI6ImU0N2RiM2E5LWYyYWEtNDFjYS1hNGY5LTdiZDUxNzVkMWI4MSJ9.lybbOuWkKnZN9JENKJa0jn1ysEW0V8ezcpoFABk_fI0",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"sender_id\": \"228b94e8-26ba-4e2f-9d0d-6f410ca67560\",\r\n    \"conversation\": \"c60b3c4e-4f33-44cc-aaa4-e43566812c38\",\r\n    \"message_body\": \"You can come collect it.\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://127.0.0.1:8000/api/conversations/c60b3c4e-4f33-44cc-aaa4-e43566812c38/messages/",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "8000",
+					"path": [
+						"api",
+						"conversations",
+						"c60b3c4e-4f33-44cc-aaa4-e43566812c38",
+						"messages",
+						""
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Fetching conversations",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Cache-Control",
+						"value": "no-cache",
+						"name": "cache-control",
+						"type": "text"
+					},
+					{
+						"key": "Postman-Token",
+						"value": "<calculated when request is sent>",
+						"name": "postman-token",
+						"type": "text"
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"name": "content-type",
+						"type": "text"
+					},
+					{
+						"key": "Content-Length",
+						"value": "<calculated when request is sent>",
+						"name": "content-length",
+						"type": "text"
+					},
+					{
+						"key": "Host",
+						"value": "<calculated when request is sent>",
+						"name": "host",
+						"type": "text"
+					},
+					{
+						"key": "User-Agent",
+						"value": "PostmanRuntime/7.39.1",
+						"name": "user-agent",
+						"type": "text"
+					},
+					{
+						"key": "Accept",
+						"value": "*/*",
+						"name": "accept",
+						"type": "text"
+					},
+					{
+						"key": "Accept-Encoding",
+						"value": "gzip, deflate, br",
+						"name": "accept-encoding",
+						"type": "text"
+					},
+					{
+						"key": "Connection",
+						"value": "keep-alive",
+						"name": "connection",
+						"type": "text"
+					},
+					{
+						"key": "Authorization",
+						"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzUzNDQ1NTg4LCJpYXQiOjE3NTM0NDUyODgsImp0aSI6ImUwODA3NGM2MDhjOTQ4ZWRiZmEzMzc2MDhhMDBhNzU3IiwidXNlcl9pZCI6ImU0N2RiM2E5LWYyYWEtNDFjYS1hNGY5LTdiZDUxNzVkMWI4MSJ9.5Aq7WjkGAPZhBJjeb8LNSj5ffzmpVY5vPGFuxpSkNs4",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://127.0.0.1:8000/api/conversations/",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "8000",
+					"path": [
+						"api",
+						"conversations",
+						""
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Unauthorized fetching",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://127.0.0.1:8000/api/conversations/",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "8000",
+					"path": [
+						"api",
+						"conversations",
+						""
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}
