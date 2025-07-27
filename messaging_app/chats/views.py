@@ -20,6 +20,8 @@ from .serializers import (
     MessageListSerializer,
 )
 from .permissions import IsParticipantOfConversation
+from .filters import MessageFilter, ConversationFilter, UserFilter
+from .pagination import MessagePagination, ConversationPagination, UserPagination
 
 User = get_user_model()
 
@@ -32,9 +34,11 @@ class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     permission_classes = [IsParticipantOfConversation]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_class = UserFilter
     search_fields = ['first_name', 'last_name', 'email']
     ordering_fields = ['first_name', 'last_name', 'date_joined']
     ordering = ['-date_joined']
+    pagination_class = UserPagination
     
     def get_serializer_class(self):
         """Return appropriate serializer based on action."""
@@ -91,10 +95,11 @@ class ConversationViewSet(viewsets.ModelViewSet):
     """
     permission_classes = [IsParticipantOfConversation]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ['is_group_chat', 'created_at']
+    filterset_class = ConversationFilter
     search_fields = ['title']
     ordering_fields = ['created_at', 'title']
     ordering = ['-created_at']
+    pagination_class = ConversationPagination
     
     def get_queryset(self):
         """Return conversations where the current user is a participant."""
@@ -247,14 +252,15 @@ class ConversationViewSet(viewsets.ModelViewSet):
 class MessageViewSet(viewsets.ModelViewSet):
     """
     ViewSet for managing messages.
-    Provides endpoints for listing, creating, and managing messages.
+    Provides endpoints for listing, creating, and managing messages with filtering and pagination.
     """
     permission_classes = [IsParticipantOfConversation]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ['conversation', 'sender', 'sent_at']
+    filterset_class = MessageFilter
     search_fields = ['message_body']
     ordering_fields = ['sent_at']
     ordering = ['-sent_at']
+    pagination_class = MessagePagination
     
     def get_queryset(self):
         """Return messages from conversations where user is a participant."""
@@ -273,6 +279,30 @@ class MessageViewSet(viewsets.ModelViewSet):
         elif self.action == 'list':
             return MessageListSerializer
         return MessageSerializer
+    
+    def list(self, request, *args, **kwargs):
+        """
+        List messages with filtering and pagination.
+        
+        Available filters:
+        - conversation_participants: Filter by conversation participants
+        - conversation: Filter by specific conversation
+        - sender: Filter by message sender
+        - sent_at_after/sent_at_before: Filter by datetime range
+        - sent_date_after/sent_date_before: Filter by date range
+        - message_body: Filter by message content (case-insensitive)
+        - conversation_with_user: Filter messages from conversations with specific user
+        - is_group_conversation: Filter by conversation type
+        """
+        queryset = self.filter_queryset(self.get_queryset())
+        
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+        
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
     
     def create(self, request, *args, **kwargs):
         """Send a new message to a conversation."""
@@ -341,7 +371,7 @@ class MessageViewSet(viewsets.ModelViewSet):
     
     @action(detail=False, methods=['get'])
     def search(self, request):
-        """Search messages by content."""
+        """Search messages by content with pagination."""
         query = request.query_params.get('q', '').strip()
         if not query:
             return Response(
@@ -351,7 +381,17 @@ class MessageViewSet(viewsets.ModelViewSet):
         
         messages = self.get_queryset().filter(
             message_body__icontains=query
-        )[:50]  # Limit to 50 results
+        )
+        
+        # Apply pagination to search results
+        page = self.paginate_queryset(messages)
+        if page is not None:
+            serializer = MessageListSerializer(
+                page, 
+                many=True, 
+                context={'request': request}
+            )
+            return self.get_paginated_response(serializer.data)
         
         serializer = MessageListSerializer(
             messages, 
@@ -378,3 +418,14 @@ class MessageViewSet(viewsets.ModelViewSet):
             context={'request': request}
         )
         return Response(serializer.data)
+    
+    @action(detail=False, methods=['get'])
+    def by_conversation(self, request):
+        """
+        Get messages filtered by conversation participants or specific users.
+        
+        Query Parameters:
+        - conversation_id: Specific conversation ID
+        - user_id: Messages from conversations with this user
+        - users: Comma-separated user IDs for conversations with these users
+        - page
