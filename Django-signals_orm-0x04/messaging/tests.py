@@ -301,3 +301,13 @@ class SignalTest(TestCase):
 class PerformanceTest(TestCase):
     def setUp(self):
         self.user1 = User.objects.create_user(username='user1', passwor
+
+    def test_unread_message_manager(self):
+        # One unread
+        Message.objects.create(sender=self.user1, receiver=self.user2, content="Unread")
+        # One read
+        Message.objects.create(sender=self.user1, receiver=self.user2, content="Read", read=True)
+
+        unread_msgs = Message.unread.for_user(self.user2)
+        self.assertEqual(unread_msgs.count(), 1)
+        self.assertEqual(unread_msgs.first().content, "Unread")

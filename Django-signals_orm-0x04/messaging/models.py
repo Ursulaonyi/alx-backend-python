@@ -7,7 +7,6 @@ class MessageManager(models.Manager):
     """Custom manager for Message model with optimized queries."""
     
     def get_conversation_messages(self, user1, user2):
-        """Get all messages in a conversation between two users with optimizations."""
         return self.select_related('sender', 'receiver', 'parent_message')\
                   .prefetch_related('replies__sender', 'replies__receiver')\
                   .filter(
@@ -16,11 +15,9 @@ class MessageManager(models.Manager):
                   ).order_by('timestamp')
     
     def get_threaded_messages(self, conversation_messages):
-        """Get messages organized in threaded format (top-level messages only)."""
         return conversation_messages.filter(parent_message__isnull=True)
     
     def get_message_with_thread(self, message_id):
-        """Get a message with its complete thread (all replies recursively)."""
         return self.select_related('sender', 'receiver', 'parent_message')\
                   .prefetch_related(
                       'replies__sender',
@@ -30,6 +27,13 @@ class MessageManager(models.Manager):
                   ).get(id=message_id)
 
 
+class UnreadMessagesManager(models.Manager):
+    """Custom manager to retrieve unread messages for a specific user."""
+    
+    def for_user(self, user):
+        return self.filter(receiver=user, read=False).only('id', 'content', 'sender', 'timestamp')
+
+
 class Message(models.Model):
     sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name='sent_messages')
     receiver = models.ForeignKey(User, on_delete=models.CASCADE, related_name='received_messages')
@@ -37,8 +41,8 @@ class Message(models.Model):
     timestamp = models.DateTimeField(default=timezone.now)
     edited = models.BooleanField(default=False)
     edited_at = models.DateTimeField(null=True, blank=True)
-    
-    # Self-referential foreign key for threading
+    read = models.BooleanField(default=False)  # <- NEW FIELD
+
     parent_message = models.ForeignKey(
         'self', 
         on_delete=models.CASCADE, 
@@ -47,11 +51,11 @@ class Message(models.Model):
         related_name='replies'
     )
     
-    # Thread-related fields
-    thread_level = models.PositiveIntegerField(default=0)  # Depth in thread
-    reply_count = models.PositiveIntegerField(default=0)   # Number of direct replies
+    thread_level = models.PositiveIntegerField(default=0)
+    reply_count = models.PositiveIntegerField(default=0)
     
     objects = MessageManager()
+    unread = UnreadMessagesManager()  # <- NEW MANAGER
 
     class Meta:
         ordering = ['timestamp']
@@ -66,16 +70,13 @@ class Message(models.Model):
         return f"Message from {self.sender.username} to {self.receiver.username}{thread_indicator}"
 
     def save(self, *args, **kwargs):
-        # Set thread level based on parent
         if self.parent_message:
             self.thread_level = self.parent_message.thread_level + 1
-            # Ensure receiver matches the conversation participants
             if self.parent_message.sender == self.sender:
                 self.receiver = self.parent_message.receiver
             else:
                 self.receiver = self.parent_message.sender
-        
-        # Handle edit tracking
+
         if self.pk:
             original = Message.objects.get(pk=self.pk)
             if original.content != self.content:
@@ -84,55 +85,40 @@ class Message(models.Model):
         
         super().save(*args, **kwargs)
         
-        # Update reply count for parent
-        if self.parent_message and not self.pk:  # Only for new replies
+        if self.parent_message and not self.pk:
             self.parent_message.reply_count = self.parent_message.replies.count()
             self.parent_message.save(update_fields=['reply_count'])
 
     def get_thread_root(self):
-        """Get the root message of this thread."""
         if self.parent_message:
             return self.parent_message.get_thread_root()
         return self
 
     def get_all_replies(self):
-        """Get all replies to this message recursively using optimized queries."""
         return Message.objects.filter(
             models.Q(parent_message=self) |
             models.Q(parent_message__parent_message=self) |
             models.Q(parent_message__parent_message__parent_message=self)
-            # Add more levels if needed for deeper threading
         ).select_related('sender', 'receiver').order_by('timestamp')
 
     def get_direct_replies(self):
-        """Get only direct replies to this message."""
         return self.replies.select_related('sender', 'receiver').order_by('timestamp')
 
     def is_reply(self):
-        """Check if this message is a reply to another message."""
         return self.parent_message is not None
 
     def get_conversation_participants(self):
-        """Get all participants in this conversation thread."""
         root = self.get_thread_root()
         participants = {root.sender, root.receiver}
-        
-        # Add participants from all replies
         for reply in root.get_all_replies():
             participants.add(reply.sender)
             participants.add(reply.receiver)
-        
         return list(participants)
 
 
 class ConversationManager(models.Manager):
-    """Manager for handling conversation-related queries."""
-    
     def get_user_conversations(self, user):
-        """Get all conversations for a user with latest message info."""
         from django.db.models import Q, Max, Subquery, OuterRef
-        
-        # Get latest message for each conversation
         latest_messages = Message.objects.filter(
             Q(sender=user) | Q(receiver=user)
         ).values('sender', 'receiver').annotate(
@@ -145,7 +131,6 @@ class ConversationManager(models.Manager):
 
 
 class Conversation(models.Model):
-    """Model to represent conversation metadata."""
     participants = models.ManyToManyField(User, related_name='conversations')
     created_at = models.DateTimeField(default=timezone.now)
     last_message_at = models.DateTimeField(default=timezone.now)
@@ -161,7 +146,6 @@ class Conversation(models.Model):
         return f"Conversation: {participant_names}"
     
     def update_last_message(self):
-        """Update last message timestamp and count."""
         latest_message = Message.objects.filter(
             models.Q(sender__in=self.participants.all()) & 
             models.Q(receiver__in=self.participants.all())
