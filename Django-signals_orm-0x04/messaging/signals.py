@@ -1,6 +1,10 @@
-from django.db.models.signals import post_save, pre_save
+from django.db.models.signals import post_save, pre_save, post_delete
 from django.dispatch import receiver
+from django.contrib.auth.models import User
 from .models import Message, Notification, MessageHistory
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 @receiver(post_save, sender=Message)
@@ -37,3 +41,67 @@ def log_message_edit(sender, instance, **kwargs):
         except Message.DoesNotExist:
             # Message doesn't exist yet, skip logging
             pass
+
+
+@receiver(post_delete, sender=User)
+def cleanup_user_data(sender, instance, **kwargs):
+    """
+    Clean up all user-related data when a user is deleted.
+    This signal handles any remaining data that wasn't deleted by CASCADE.
+    """
+    try:
+        # Log the cleanup process
+        logger.info(f"Starting cleanup for deleted user: {instance.username}")
+        
+        # Get counts before deletion for logging
+        sent_messages = Message.objects.filter(sender=instance).count()
+        received_messages = Message.objects.filter(receiver=instance).count()
+        user_notifications = Notification.objects.filter(user=instance).count()
+        user_histories = MessageHistory.objects.filter(edited_by=instance).count()
+        
+        # Delete sent messages (this will cascade to related notifications and histories)
+        Message.objects.filter(sender=instance).delete()
+        
+        # Delete received messages (this will cascade to related notifications and histories)
+        Message.objects.filter(receiver=instance).delete()
+        
+        # Delete any remaining notifications
+        Notification.objects.filter(user=instance).delete()
+        
+        # Delete any remaining message histories where user was the editor
+        MessageHistory.objects.filter(edited_by=instance).delete()
+        
+        # Log successful cleanup
+        logger.info(
+            f"Successfully cleaned up data for user {instance.username}: "
+            f"{sent_messages} sent messages, {received_messages} received messages, "
+            f"{user_notifications} notifications, {user_histories} edit histories"
+        )
+        
+    except Exception as e:
+        logger.error(f"Error during user data cleanup for {instance.username}: {str(e)}")
+
+
+@receiver(post_delete, sender=Message)
+def cleanup_message_orphans(sender, instance, **kwargs):
+    """
+    Clean up any orphaned notifications or histories when a message is deleted.
+    This provides additional safety beyond CASCADE relationships.
+    """
+    try:
+        # Clean up any orphaned notifications (should be handled by CASCADE, but extra safety)
+        orphaned_notifications = Notification.objects.filter(message_id=instance.id)
+        notification_count = orphaned_notifications.count()
+        if notification_count > 0:
+            orphaned_notifications.delete()
+            logger.info(f"Cleaned up {notification_count} orphaned notifications for message {instance.id}")
+        
+        # Clean up any orphaned message histories (should be handled by CASCADE, but extra safety)
+        orphaned_histories = MessageHistory.objects.filter(message_id=instance.id)
+        history_count = orphaned_histories.count()
+        if history_count > 0:
+            orphaned_histories.delete()
+            logger.info(f"Cleaned up {history_count} orphaned histories for message {instance.id}")
+            
+    except Exception as e:
+        logger.error(f"Error during message cleanup for message {instance.id}: {str(e)}")
