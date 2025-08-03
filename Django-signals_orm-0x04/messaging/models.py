@@ -29,7 +29,7 @@ class MessageManager(models.Manager):
 
 class UnreadMessagesManager(models.Manager):
     """Custom manager to retrieve unread messages for a specific user."""
-    
+
     def for_user(self, user):
         return self.filter(receiver=user, read=False).only('id', 'content', 'sender', 'timestamp')
 
@@ -41,7 +41,7 @@ class Message(models.Model):
     timestamp = models.DateTimeField(default=timezone.now)
     edited = models.BooleanField(default=False)
     edited_at = models.DateTimeField(null=True, blank=True)
-    read = models.BooleanField(default=False)  # <- NEW FIELD
+    read = models.BooleanField(default=False)
 
     parent_message = models.ForeignKey(
         'self', 
@@ -55,7 +55,7 @@ class Message(models.Model):
     reply_count = models.PositiveIntegerField(default=0)
     
     objects = MessageManager()
-    unread = UnreadMessagesManager()  # <- NEW MANAGER
+    unread_messages = UnreadMessagesManager()  # ✅ RENAMED to `unread_messages`
 
     class Meta:
         ordering = ['timestamp']
@@ -189,3 +189,17 @@ class Notification(models.Model):
 
     def __str__(self):
         return f"Notification for {self.user.username}: {self.title}"
+
+    def mark_as_read(self):
+        self.is_read = True
+        self.save()
+
+    def mark_as_unread(self):
+        self.is_read = False
+        self.save()
+        'conversations': conversations,
+        'user': request.user,
+    }
+    return render(request, 'messaging/conversation_list.html', context)
+    messages = Message.objects.get_conversation_messages(request.user, partner)
+    context['messages'] = messages
